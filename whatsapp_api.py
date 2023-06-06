@@ -1,9 +1,6 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
+import mysql.connector
+import webbrowser
 
-# List of dangerous links
 DANGEROUS_LINKS = [
     "https://youtube.com",
     "http://forbes.com",
@@ -11,36 +8,46 @@ DANGEROUS_LINKS = [
     # Add more dangerous links here
 ]
 
-# Path to the ChromeDriver executable on your system
-chromedriver_path = r'C:\WINDOWS\System32\chromedriver.exe'
+# Establish a connection to the MySQL database
+connection = mysql.connector.connect(
+    host="",  # Replace with your MySQL host
+    user="",  # Replace with your MySQL username
+    password="",  # Replace with your MySQL password
+    database=""  # Replace with your MySQL database name
+)
 
-# Configure Chrome options
-chrome_options = Options()
-chrome_options.add_argument("--headless")  # Run Chrome in headless mode
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
+def check_link_exists():
+    userLink = input("Enter a full link: ")
+    
+    # Create a cursor object
+    cursor = connection.cursor()
+    chromedriver_path = 'C:/Program Files/Google/Chrome/Application/chrome.exe %s'
 
-# Start the ChromeDriver service
-service = Service(chromedriver_path)
+    try:
+        # Execute the query
+        cursor.execute("SELECT * FROM whatsapp")
 
-# Create a Chrome WebDriver instance
-driver = webdriver.Chrome(service=service, options=chrome_options)
+        # Fetch all rows from the result set
+        links = cursor.fetchall() 
+        for _, link in links:
+           
+            if str(userLink.lower()) == str(link.lower()):
+                print("The link is not safe.")
+              
+            elif userLink != link:
+                webbrowser.get(chromedriver_path).open(userLink)
 
-# Prompt the user to enter a link
-link = input("Enter a link: ")
+    except mysql.connector.Error as error:
+        print("Failed to execute query:", error)
 
-# Check if the entered link is in the list of dangerous links
-is_dangerous = link in DANGEROUS_LINKS
+    # Close the cursor
+    cursor.close()
 
-if is_dangerous:
-    print("\nDanger! This link may potentially be harmful or contain explicit content!")
-    proceed = input("Do you wish to still proceed to the link? (Yes/No): ")
-    if proceed.lower() == 'yes':
-        print("Link is now allowed. You may proceed.")
-    else:
-        print("Link blocked. You cannot proceed.")
-else:
-    print("Link is safe. You can proceed.")
+# Check if the connection is successful
+if connection.is_connected():
+    print("Connection to MySQL database successful!")
+    check_link_exists()
 
-# Close the Chrome browser
-driver.quit()
+# Close the connection
+connection.close()
+  
